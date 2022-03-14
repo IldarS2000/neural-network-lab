@@ -40,4 +40,6 @@ class SumReduce(Function):
         :param grad_output: the gradient of the result of the reduction
         :return: a tuple with a single value representing the gradient over the reduction argument
         """
-        raise NotImplementedError   # TODO: implement me as an exercise
+        temp = np.ones_like(self.args[0].data)
+
+        return (temp * grad_output,)
