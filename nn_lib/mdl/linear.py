@@ -11,6 +11,7 @@ class Linear(Module):
     Linear module is a building block of multi-layer perceptron neural network that performs a linear transform of the
     data batch
     """
+
     def __init__(self, in_dim: int, out_dim: int, activation_fn: str = 'relu'):
         """
         Create a linear module similar to https://pytorch.org/docs/stable/generated/torch.nn.Linear.html
@@ -33,7 +34,11 @@ class Linear(Module):
         :param x: an input of the shape (B, self.in_dim), where B is the batch size
         :return: an output of the layer of the shape (B, self.out_dim), where B is the batch size
         """
-        raise NotImplementedError   # TODO: implement me as an exercise
+        res = F.mat_mul(x, self.weight) + self.bias
+        if self.activation_fn == 'relu':
+            return F.relu(res)
+        else:
+            return res
 
     @staticmethod
     def init_parameter(shape: Tuple[int, int], scale: float) -> np.ndarray:
@@ -43,7 +48,7 @@ class Linear(Module):
         :param scale: scale of the parameter
         :return: initialized parameter
         """
-        raise NotImplementedError   # TODO: implement me as an exercise
+        return np.random.uniform(-scale, scale, shape)
 
     def __str__(self):
         result = f'Linear layer: size ({self.in_dim}, {self.out_dim}), activation {self.activation_fn}'

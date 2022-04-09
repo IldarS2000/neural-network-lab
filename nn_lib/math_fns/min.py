@@ -17,7 +17,7 @@ class Min(Function):
         https://numpy.org/doc/stable/user/basics.broadcasting.html
         :return: minimum over the two arguments
         """
-        raise NotImplementedError   # TODO: implement me as an exercise
+        return np.minimum(self.args[0].data, self.args[1].data)
 
     def _backward(self, grad_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -30,4 +30,13 @@ class Min(Function):
         :param grad_output: gradient over the result of the minimum operation
         :return: a tuple of gradients over arguments of the minimum
         """
-        raise NotImplementedError   # TODO: implement me as an exercise
+        data1 = self.args[0].data
+        data2 = self.args[1].data
+
+        temp1 = np.where(data1 < data2, 1, 0)
+        temp2 = np.where(data2 < data1, 1, 0)
+
+        vec1 = np.where(data1 == data2, 0.5, temp1)
+        vec2 = np.where(data1 == data2, 0.5, temp2)
+
+        return vec1 * grad_output, vec2 * grad_output

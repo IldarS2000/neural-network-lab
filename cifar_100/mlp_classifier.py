@@ -5,25 +5,29 @@ from nn_lib import Tensor
 from nn_lib.mdl import Module, Linear
 
 
-class BinaryMLPClassifier(Module):
+class MLPClassifier(Module):
     """
-    Class representing a multilayer perceptron network for solving binary classification task
+    Class representing a multilayer perceptron network for solving classification task
     """
-    def __init__(self, in_features: int, hidden_layer_sizes: Union[Tuple[int, ...], List[int]]):
+
+    def __init__(self, in_features: int, number_of_classes: int,
+                 hidden_layer_sizes: Union[Tuple[int, ...], List[int]]):
         """
         Creates binary MLP classifier
         :param in_features: number of feature in the input data
         :param hidden_layer_sizes: number of neurons in hidden layers of MLP
         """
         self.in_features = in_features
-        self.hidden_layer_sizes = hidden_layer_sizes
+        self.number_of_classes = number_of_classes
+        self.hidden_layer_sizes = list(hidden_layer_sizes)
 
         self._parameters = []
-        self.layers = []        # type: List[Linear]
+        self.layers = []  # type: List[Linear]
+
         self._build_layers()
 
     def parameters(self) -> List[Tensor]:
-        result = self._parameters.copy()
+        result = [parameter for parameter in self._parameters if parameter.requires_grad]
         return result
 
     def _build_layers(self) -> None:
@@ -35,13 +39,17 @@ class BinaryMLPClassifier(Module):
         Output of the last layer will later be used as an argument to the sigmoid function
         :return: None
         """
-        self._add_layer(self.in_features, self.hidden_layer_sizes[0], 'relu')
+        number_of_layers = len(self.hidden_layer_sizes)
+        if number_of_layers == 0:
+            return
 
-        for in_dim_index, in_dim in enumerate(self.hidden_layer_sizes[:-1]):
-            out_dim = self.hidden_layer_sizes[in_dim_index + 1]
+        for i in range(0, number_of_layers):
+            in_dim = out_dim if i != 0 else self.in_features
+            out_dim = self.hidden_layer_sizes[i]
+
             self._add_layer(in_dim, out_dim, 'relu')
 
-        self._add_layer(self.hidden_layer_sizes[-1], 1, 'none')
+        self._add_layer(out_dim, self.number_of_classes, 'none')
 
     def _add_layer(self, in_dim: int, out_dim: int, activation_fn: str) -> None:
         """
@@ -51,10 +59,8 @@ class BinaryMLPClassifier(Module):
         :param activation_fn: activation function to apply to the outputs of the added layer
         :return: None
         """
-
         layer = Linear(in_dim, out_dim, activation_fn)
         self.layers.append(layer)
-
         self._parameters.append(layer.weight)
         self._parameters.append(layer.bias)
 
@@ -65,10 +71,9 @@ class BinaryMLPClassifier(Module):
         :param x: input data batch of the shape (B, self.in_features)
         :return: prediction batch of logits of the shape (B,)
         """
-        predictions = x
         for layer in self.layers:
-            predictions = layer(predictions)
-        return predictions[:, 0]
+            x = layer.forward(x)
+        return x
 
     def parameter_count(self) -> int:
         """
